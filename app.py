@@ -1,5 +1,5 @@
 from crypt import methods
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_wtf import Form
 from wtforms.fields import RadioField, SubmitField, StringField
 from wtforms.validators import Required
@@ -29,33 +29,54 @@ class LearnForm(Form):
 
 @app.route('/') # Router
 def index():
+    session['question'] = 0
     return render_template('index.html')
 
 # the default method of router is GET.
-@app.route('/question/<int:id>', methods=['GET', 'POST']) # if an argument variable is defined in the router, it's not going to be after query mark '?'.
-def question(id):
+@app.route('/question', methods=['GET', 'POST']) # if an argument variable is defined in the router, it's not going to be after query mark '?'.
+def question():
+    if 'question' not in session:
+        return redirect(url_for('index'))
+
+    id = session['question']
     question = game.get_question(id)
-    if question == None:
-        return redirect(url_for('guess', id=id))
+    if question is None:
+        return redirect(url_for('guess'))
 
     form = YesNoQuestionForm()
     if form.validate_on_submit():
-        new_id = game.answer_question(form.answer.data == 'yes', id)
-        return redirect(url_for('question', id=new_id))
+        session['question'] = game.answer_question(form.answer.data == 'yes', id)
+        return redirect(url_for('question'))
 
     return render_template('question.html', question=question, form=form)
 
-@app.route('/guess/<int:id>', methods= ['GET', 'POST'])
-def guess(id):
+@app.route('/guess', methods= ['GET', 'POST'])
+def guess():
+    if 'question' not in session:
+        return redirect(url_for('index'))
+
+    id = session['question']
+    guess = game.get_guess(id)
+    if guess is None:
+        return redirect(url_for('index'))
+
     form = YesNoQuestionForm()
     if form.validate_on_submit():
         if form.answer.data == 'yes':
-            return redirect(url_for('learn', id=id))
+            return redirect(url_for('index'))
+        return redirect(url_for('learn'))
     return render_template('guess.html', guess=game.get_guess(id), form=form)
 
-@app.route('/learn/<int:id>', methods=['GET', 'POST'])
-def learn(id):
+@app.route('/learn', methods=['GET', 'POST'])
+def learn():
+    if 'question' not in session:
+        return redirect(url_for('index'))
+
+    id = session['question']
     guess = game.get_guess(id)
+    if guess is None:
+        return redirect(url_for('index'))
+
     form = LearnForm()
     if form.validate_on_submit():
         game.expand(guess, form.language.data, form.question.data, form.answer.data == 'yes')
