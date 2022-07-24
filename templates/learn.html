@@ -8,18 +8,18 @@
 </head>
 <body>
     <h1>Guess the Language!</h1>
-    <p>My guess: {{ guess }}</p>
-    <p>Was I right?</p>
+    <p>Sorry I did not know your language. Can you help me learn it?</p>
     <form action="" method="post">
         {{ form.hidden_tag() }}
+        <p>{{ form.language.label }} {{ form.language() }}</p>
+        <p>{{ form.question.label }} {{ form.question() }}</p>
+        <p>What is the answer to this question for your language?</p>
         <p>
             {% for option in form.answer %}
-                {{ option }} {{ option.label }}
+                {{ option }} {{ option.label }}<br>
             {% endfor %}
         </p>
-        <p>
-            {{ form.submit }}
-        </p>
+        {{ form.submit }}
     </form>
 </body>
 </html>
